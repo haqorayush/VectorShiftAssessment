@@ -1,0 +1,100 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2905
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 # Walkthrough - Part 4: Backend Integration & Real-Time DAG Verification\
+\
+This document provides detailed technical documentation exclusively for **Part 4: Backend Integration**, covering the connection between the ReactFlow frontend studio and the Python FastAPI backend, the topological graph algorithm used for Directed Acyclic Graph (DAG) validation, and the Neo-Editorial user inspection alerts.\
+\
+---\
+\
+## 1. FastAPI Backend Engine & DAG Verification ([backend/main.py](file:///Users/ayushdwivedy/Desktop/VectorShift/backend/main.py))\
+\
+### Dependency & Runtime Architecture\
+- **Environment Management**: Configured an isolated Python virtual environment (`.venv`) initialized with standard packages: `fastapi`, `uvicorn`, `pydantic`, and `python-multipart`.\
+- **CORS Middleware**: Applied `CORSMiddleware` across the FastAPI instance to allow local frontends (such as React dev servers on `http://localhost:3000`) to post graph state without cross-origin blocking.\
+\
+### Topological Sorting (Kahn's Algorithm) for DAG Validation\
+To determine whether an arbitrary user-created pipeline contains directed feedback loops or forms a valid Directed Acyclic Graph (DAG), we implemented **Kahn\'92s Topological Sort Algorithm** inside the `calculate_is_dag(nodes, edges)` function:\
+1. **In-Degree Mapping**: Iterates over all active graph `nodes` to generate an identity map and calculates the `in_degree` (number of incoming connections) for each node by scanning `edges`. Simultaneously builds an adjacency list (`adj_list`) mapping source ports to downstream target nodes.\
+2. **Root Queue Processing**: Identifies all root nodes (where `in_degree == 0`) and pushes them onto an initial processing queue.\
+3. **Iterative Reduction**: As each root node is dequeued, the total processed node counter (`visited_nodes`) increments, and the algorithm decrements the in-degree of all downstream neighbors. If a neighbor's in-degree drops to zero, it is added to the processing queue.\
+4. **Cycle Determination**: Upon exhausting the queue, if `visited_nodes == len(node_ids)`, every node was successfully sorted in topological order without stalling\'97proving the graph is entirely acyclic (`is_dag = True`). If any nodes remain unvisited (`visited_nodes < len(node_ids)`), a directed cycle exists (`is_dag = False`).\
+5. **Efficiency**: Executes in optimal \\(O(V + E)\\) time complexity, where \\(V\\) is total nodes and \\(E\\) is total edges, guaranteeing immediate responsiveness even on complex pipeline graphs.\
+\
+### Universal Endpoint Structure (`/pipelines/parse`)\
+Upgraded the `/pipelines/parse` endpoint to support seamless JSON posting via a dedicated Pydantic validation schema while retaining backwards compatibility with stringified form data:\
+```python\
+class PipelineRequest(BaseModel):\
+    nodes: List[Dict[str, Any]] = []\
+    edges: List[Dict[str, Any]] = []\
+```\
+\
+**Endpoint Response Contract**:\
+```json\
+\{\
+  "num_nodes": 3,\
+  "num_edges": 2,\
+  "is_dag": true\
+\}\
+```\
+\
+---\
+\
+## 2. Frontend Integration & Executive Inspection Alerts ([frontend/src/submit.js](file:///Users/ayushdwivedy/Desktop/VectorShift/frontend/src/submit.js))\
+\
+### Live Zustand Store Hook\
+- **State Excision**: Bound the trigger component directly to the global Zustand store via selector hooks (`useStore(selector, shallow)`) to extract the real-time arrays of `nodes` and `edges` whenever the execute button is pressed.\
+- **Asynchronous Execution**: Upon clicking **RUN PIPELINE**, the button enters a visually responsive loading state (`ANALYZING DAG...`), temporarily disabling redundant triggers while awaiting network transmission.\
+\
+### Custom Neo-Editorial Verification Alert Modal\
+To adhere strictly to our **Neo-Editorial Dark Mode Design System**, we replaced standard browser system popups (`window.alert`) with a high-contrast executive modal dialog designed to simulate an industrial pipeline verification report:\
+- **Obsidian Glassmorphism Surface**: Rendered over an `85%` opacity darkened blur backdrop (`rgba(6, 8, 11, 0.85)`), utilizing solid obsidian fill (`var(--bg)`), crisp 1px borders, and a prominent signature gold block shadow (`8px 8px 0px var(--gold)`).\
+- **Structured Data Grid**: Displays large digital typography blocks (`JetBrains Mono` bold at 32px) for **TOTAL NODES** and **TOTAL EDGES** side-by-side.\
+- **Dynamic Status Indication**: Automatically evaluates the backend `is_dag` boolean to output a clear visual diagnosis:\
+  - **Acyclic Pipeline (`is_dag: true`)**: Highlighted with a mint green tint box (`#62E4C5`) labeled **`Valid (Acyclic Pipeline)`** and tagged with a bold **`PASS`** badge.\
+  - **Cyclic Pipeline (`is_dag: false`)**: Highlighted with a warm coral tint box (`#E48462`) labeled **`Invalid (Cycle Detected)`** and tagged with a bold **`FAIL`** badge.\
+- **Error Resiliency**: Automatically surfaces detailed connectivity diagnostics if the FastAPI backend is offline or inaccessible.\
+\
+---\
+\
+## 3. End-to-End Verification & Testing Results\
+\
+### Automated Frontend Build Verification\
+- Executed `npm run build` directly inside the `/frontend` directory following API and UI integrations.\
+- **Result**: `Compiled successfully` with **0 errors** and **0 warnings**.\
+\
+### Backend Live Endpoint Testing via HTTP\
+Tested the deployed Uvicorn daemon running on port `8000` against representative pipeline payloads:\
+\
+1. **Test Case A: Valid Acyclic Graph**\
+   - **Payload**: 3 interconnected linear nodes (`1 -> 2 -> 3`).\
+     ```json\
+     \{\
+       "nodes": [\{"id":"1"\}, \{"id":"2"\}, \{"id":"3"\}],\
+       "edges": [\{"source":"1", "target":"2"\}, \{"source":"2", "target":"3"\}]\
+     \}\
+     ```\
+   - **Actual Server Response**:\
+     ```json\
+     \{"num_nodes": 3, "num_edges": 2, "is_dag": true\}\
+     ```\
+   - **Status**: **VERIFIED** (Accurately identified as a valid DAG).\
+\
+2. **Test Case B: Invalid Cyclic Graph**\
+   - **Payload**: 2 mutually linked nodes forming a closed feedback loop (`1 -> 2 -> 1`).\
+     ```json\
+     \{\
+       "nodes": [\{"id":"1"\}, \{"id":"2"\}],\
+       "edges": [\{"source":"1", "target":"2"\}, \{"source":"2", "target":"1"\}]\
+     \}\
+     ```\
+   - **Actual Server Response**:\
+     ```json\
+     \{"num_nodes": 2, "num_edges": 2, "is_dag": false\}\
+     ```\
+   - **Status**: **VERIFIED** (Accurately detected directed cycle and returned false).\
+}

@@ -1,0 +1,50 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2905
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww21600\viewh10480\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 # Walkthrough - VectorShift AI Studio (Part 3 Complete)\
+\
+We have successfully engineered **Part 1 (Node Abstraction & Expansion)**, **Part 2 (Neo-Editorial Dark Mode Design System)**, and **Part 3 (Text Node Dynamic Auto-Resizing, Variable Handle Parsing, & Intelligent Routing)**!\
+\
+---\
+\
+## Latest Completion: Part 3 - Text Node Logic, Layout Precision & Smart Edge Routing\
+\
+### 1. Dynamic Auto-Resizing Architecture\
+- **[textNode.js](file:///Users/ayushdwivedy/Desktop/VectorShift/frontend/src/nodes/textNode.js)**:\
+  - Upgraded the static `<input type="text">` to a multi-line `<textarea>` element styled in uppercase `JetBrains Mono` and protected from drag conflicts via ReactFlow's `nodrag nowheel` classes.\
+  - Implemented real-time dimension calculations using `useMemo`:\
+    - **Width Scaling**: Expands automatically from a baseline `250px` up to `580px` based on line lengths and parameter badge requirements.\
+    - **Vertical & Textarea Growth**: Scales vertical rows and minimum card height (`min-height`) in tandem with explicit line breaks (`\\n`) and simulated word wrapping, preventing scrollbar clipping and vertical handle crowding.\
+\
+### 2. Live Variable Connection Handle Extraction\
+- **Regex Extraction Engine**: Integrated real-time regular expression evaluation (`/\\\{\\\{\\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*\\\}\\\}/g`) across the active text state to identify valid JavaScript variable names wrapped in double curly brackets (e.g., `\{\{ input \}\}`, `\{\{ score \}\}`, or `\{\{ _status123 \}\}`).\
+- **Set Deduplication**: Filtered discovered variables through a native `Set` so identical tags yield exactly one target connection port per unique variable name.\
+\
+### 3. Precision Handle Alignment & Zero-Overlap Content Displacement\
+- **[BaseNode.js](file:///Users/ayushdwivedy/Desktop/VectorShift/frontend/src/nodes/BaseNode.js)** & **[textNode.js](file:///Users/ayushdwivedy/Desktop/VectorShift/frontend/src/nodes/textNode.js)** Refinements:\
+  - **Direct Port Alignment**: Positioned variable tags (`[ USER_NAME ]`, `[ SCORE ]`, etc.) directly inside the card immediately beside their corresponding physical ReactFlow connection points (`left: 14px`, `top: handle.style.top`).\
+  - **Vertical Heading Clearance**: Configured connection handles and labels to begin strictly below both the node header bar and internal body headings (such as `PROMPT TEMPLATE:`). Starting at `top: 82px` with `40px` down-spacing, ports stay cleanly aligned with form editor controls without encroaching on titles or headers.\
+  - **Dynamic Horizontal Displacement**: Implemented an automated margin calculation in `<BaseNode>` that measures the pixel width of the longest active handle badge (`Math.max(76, 30 + maxInputLabelLen * 7.5)`) and pushes the main editor column to the right, ensuring zero overlap between labeled ports and textareas.\
+\
+### 4. Intelligent Non-Overlapping Edge Routing\
+- **[AutoSpacedEdge.js](file:///Users/ayushdwivedy/Desktop/VectorShift/frontend/src/edges/AutoSpacedEdge.js)** & **[ui.js](file:///Users/ayushdwivedy/Desktop/VectorShift/frontend/src/ui.js)**:\
+  - Engineered an intelligent custom connection line component (`AutoSpacedEdge`) registered across the studio as the default `smoothstep` edge type.\
+  - **Deterministic Lane Assignment**: Sorts active graph connections to assign a distinct routing lane index to every wire on the canvas.\
+  - **Staggered Loopback Offsets**: Replaces static turn offsets with staggered step-out distances (`offset: 26 + (lane % 6) * 18`), enabling loop-back feedback wires to trace around node corners in clean parallel channels.\
+  - **Displaced Transit Corridors**: Automatically shifts intermediate horizontal and vertical bend inflection points (`centerX`, `centerY`) by `28px` per lane, eliminating line merging and overlapping across shared central pathways.\
+\
+---\
+\
+## Verification & Validation Results\
+\
+### Automated Build Verification\
+- Executed `npm run build` in `/frontend` following all Part 3 logic and routing additions.\
+- **Result**: `Compiled successfully` with `0 errors` and `0 warnings`.\
+\
+### Next Steps\
+Ready to begin **Part 4: Backend DAG Verification & Pipeline Integration**!\
+}
